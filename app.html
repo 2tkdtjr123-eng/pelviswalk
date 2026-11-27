@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#13213c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PelvisWalk · 10m 보행검사</title>
+<style>
+:root{
+  --navy:#13213c; --navy2:#1f3260; --teal:#0e9f9a; --teal-l:#e3f5f4;
+  --bg:#f3f5f9; --card:#fff; --ink:#18202e; --sub:#5b6577; --line:#e3e7ee;
+  --ok:#15803d; --ok-l:#e7f6ec; --warn:#c2620a; --warn-l:#fdf1e3; --bad:#c81e1e; --bad-l:#fdeaea;
+  --L:#3b6fd8; --R:#e0703a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.app{max-width:440px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative}
+.screen{display:none;padding:20px 18px 40px;min-height:100vh;min-height:100dvh}
+.screen.on{display:block}
+h1{font-size:26px;letter-spacing:-.5px;line-height:1.25}
+h2{font-size:17px;letter-spacing:-.3px}
+.muted{color:var(--sub)}
+.small{font-size:13px}
+.brand{display:flex;align-items:center;gap:10px;margin:8px 0 22px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--navy);display:grid;place-items:center}
+.brand b{font-size:19px;letter-spacing:-.3px}
+.brand span{display:block;font-size:12px;color:var(--sub);margin-top:-2px}
+.hero{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:20px;padding:22px 20px;margin-bottom:18px}
+.hero p{opacity:.82;font-size:14px;margin-top:8px}
+.panel{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 5px}
+input,select{width:100%;height:48px;border:1.5px solid var(--line);border-radius:12px;padding:0 14px;font-size:16px;background:#fff;color:var(--ink)}
+input:focus{outline:none;border-color:var(--teal)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;height:48px}
+.seg button{border:0;background:#fff;font-size:16px;color:var(--sub)}
+.seg button.on{background:var(--navy);color:#fff;font-weight:600}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:58px;border:0;border-radius:14px;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.2px}
+.btn.primary{background:var(--teal);color:#fff}
+.btn.dark{background:var(--navy);color:#fff}
+.btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+.btn.red{background:var(--bad);color:#fff}
+.btn:active{transform:scale(.985)}
+.btns{display:grid;gap:10px;margin-top:14px}
+.btns.two{grid-template-columns:1fr 1fr}
+.btn.sm{height:48px;font-size:15px;font-weight:600}
+.link{background:none;border:0;color:var(--teal);font-size:14px;text-decoration:underline;padding:6px 0;cursor:pointer}
+details.adv summary{cursor:pointer;color:var(--sub);font-size:13px;padding:4px 0}
+/* 진행 화면 */
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:calc(100dvh - 60px);gap:14px}
+.big{font-size:120px;font-weight:800;line-height:1;color:var(--navy);font-variant-numeric:tabular-nums}
+.stage{font-size:15px;font-weight:700;color:var(--teal);letter-spacing:.5px}
+.msg{font-size:22px;font-weight:700;letter-spacing:-.4px;line-height:1.35}
+.bar{width:80%;height:10px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--teal);width:0;transition:width .1s linear}
+.live{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.live div{background:#fff;border-radius:14px;padding:12px 6px}
+.live b{display:block;font-size:26px;font-variant-numeric:tabular-nums}
+.live span{font-size:12px;color:var(--sub)}
+.pulse{width:16px;height:16px;border-radius:50%;background:var(--bad);animation:p 1s infinite}
+@keyframes p{50%{opacity:.25}}
+.spin{width:54px;height:54px;border:5px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.guide-list{text-align:left;display:grid;gap:10px;margin:6px 0}
+.guide-list li{list-style:none;display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:12px;padding:12px}
+.guide-list li b.n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:13px}
+.err{background:var(--bad-l);color:var(--bad);border-radius:12px;padding:12px;font-size:14px;margin-top:12px;display:none}
+/* 결과지 */
+#s-result{padding:0 0 40px;background:var(--bg)}
+.disc{background:var(--bad);color:#fff;font-size:12.5px;text-align:center;padding:7px 10px;font-weight:600}
+.rhead{background:var(--navy);color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:center}
+.rhead h2{font-size:18px}
+.rhead small{opacity:.7;font-size:12px}
+.rbody{padding:14px 14px 0}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 2px rgba(16,24,40,.05);break-inside:avoid}
+.ct{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ct h3{font-size:16px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.ct h3 i{font-style:normal;font-size:11px;font-weight:700;color:var(--sub);background:var(--bg);border-radius:6px;padding:2px 6px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.badge.normal{background:var(--ok-l);color:var(--ok)} .badge.caution{background:var(--warn-l);color:var(--warn)} .badge.severe{background:var(--bad-l);color:var(--bad)} .badge.na{background:var(--bg);color:var(--sub)}
+.badge.normal::before{content:"●"} .badge.caution::before{content:"▲"} .badge.severe::before{content:"■"}
+.who{display:flex;gap:14px;align-items:center}
+.ava{flex:0 0 56px;height:56px;border-radius:50%;background:var(--teal-l);color:var(--teal);display:grid;place-items:center;font-size:22px;font-weight:800}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13.5px;flex:1}
+.kv dt{color:var(--sub);font-size:12px}
+.kv dd{font-weight:600}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--bg);border-radius:12px;padding:12px}
+.tile span{font-size:12.5px;color:var(--sub);display:block}
+.tile b{font-size:28px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.tile em{font-style:normal;font-size:13px;color:var(--sub);margin-left:3px}
+.tile .badge{margin-top:6px;display:inline-flex;font-size:12px;color:inherit}
+.tile .badge.normal{color:var(--ok)} .tile .badge.caution{color:var(--warn)} .tile .badge.severe{color:var(--bad)}
+.interp{background:var(--bg);border-radius:12px;padding:12px;font-size:14px;margin-top:12px;color:#2b3445}
+.interp strong.normal{color:var(--ok)} .interp strong.caution{color:var(--warn)} .interp strong.severe{color:var(--bad)}
+.lr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.lr div{border-radius:12px;padding:10px 12px;border:1.5px solid}
+.lr .l{border-color:#cfdcf6;background:#f3f7fe} .lr .r{border-color:#f6d9c9;background:#fef7f3}
+.lr span{font-size:12.5px;font-weight:700} .lr .l span{color:var(--L)} .lr .r span{color:var(--R)}
+.lr b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.mrow{display:grid;grid-template-columns:92px 1fr 64px;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.mrow:first-of-type{border-top:0}
+.mrow .nm{font-size:14px;font-weight:600}
+.mrow .nm small{display:block;font-weight:400;color:var(--sub);font-size:11.5px}
+.mrow .val{text-align:right;font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+.cyc{display:flex;height:30px;border-radius:8px;overflow:hidden;font-size:12px;font-weight:700;color:#fff;margin:6px 0}
+.cyc div{display:grid;place-items:center}
+.score{display:flex;gap:16px;align-items:center}
+.find{display:grid;gap:8px;margin-top:12px}
+.find li{list-style:none;font-size:14px;padding:10px 12px;border-radius:10px;background:var(--bg)}
+.find li .badge{margin-left:4px;vertical-align:1px}
+.ex{display:grid;gap:8px;margin-top:8px}
+.ex div{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px}
+.ex b{font-size:14.5px}
+.ex p{font-size:13px;color:var(--sub);margin-top:2px}
+.tag{font-size:11px;color:var(--teal);font-weight:700;background:var(--teal-l);border-radius:6px;padding:1px 6px;margin-left:4px}
+.qual{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);color:var(--sub)}
+.foot{font-size:11.5px;color:var(--sub);text-align:center;padding:6px 18px 14px}
+.actions{padding:4px 14px}
+svg text{font-family:inherit}
+@media print{
+  body{background:#fff} .actions,.noprint{display:none!important}
+  .card{box-shadow:none;border:1px solid var(--line)}
+  .screen{min-height:0}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- 1. 홈: 대상자 정보 -->
+<section class="screen on" id="s-home">
+  <div class="brand">
+    <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5fe0d8" stroke-width="2.4" stroke-linecap="round"><path d="M4 18c3-8 5-8 8 0s5 8 8 0"/><circle cx="12" cy="5" r="2.2" fill="#5fe0d8" stroke="none"/></svg></div>
+    <div><b>PelvisWalk</b><span>스마트폰 골반 착용형 10m 보행검사</span></div>
+  </div>
+  <div class="hero">
+    <h1>폰을 허리에 차고<br>10m만 걸으세요</h1>
+    <p>골반 움직임 · 좌우 균형 · 보폭 · 추정 지면반발력을 한 장의 결과지로 보여드립니다.</p>
+  </div>
+  <div class="panel">
+    <h2>대상자 정보</h2>
+    <label class="f">이름</label><input id="f-name" placeholder="홍길동" autocomplete="off">
+    <div class="row2">
+      <div><label class="f">출생연도</label><input id="f-birth" type="number" inputmode="numeric" placeholder="1954"></div>
+      <div><label class="f">성별</label><div class="seg" id="f-sex"><button data-v="M" class="on">남</button><button data-v="F">여</button></div></div>
+    </div>
+    <div class="row2">
+      <div><label class="f">키 (cm)</label><input id="f-height" type="number" inputmode="decimal" placeholder="165"></div>
+      <div><label class="f">체중 (kg)</label><input id="f-weight" type="number" inputmode="decimal" placeholder="60"></div>
+    </div>
+    <details class="adv" style="margin-top:12px"><summary>측정 설정</summary>
+      <label class="f">검사기관</label><input id="f-org" value="대전대학교 건운사팀">
+      <div class="row2">
+        <div><label class="f">측정 거리 (m)</label><input id="f-dist" type="number" value="10"></div>
+        <div><label class="f">착용 준비 시간 (초)</label><input id="f-prep" type="number" value="8"></div>
+      </div>
+    </details>
+  </div>
+  <div class="btns">
+    <button class="btn primary" id="b-start">측정 시작</button>
+    <div class="btns two" style="margin-top:0">
+      <button class="btn ghost sm" data-demo="normal">데모 · 정상 보행</button>
+      <button class="btn ghost sm" data-demo="asym">데모 · 좌우 불균형</button>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top:12px;text-align:center">녹화해 둔 측정 데이터 다시 분석: <button class="link" id="b-csv">CSV 불러오기</button><input type="file" id="f-csv" accept=".csv,text/csv" hidden></p>
+  <div class="err" id="home-err"></div>
+</section>
+
+<!-- 2. 착용 가이드 -->
+<section class="screen" id="s-guide">
+  <div class="center" style="justify-content:flex-start;padding-top:10px">
+    <div class="stage">착용 가이드</div>
+    <svg width="210" height="220" viewBox="0 0 210 220" aria-label="천골 위치에 폰 착용">
+      <ellipse cx="105" cy="34" rx="22" ry="25" fill="#d9dfea"/>
+      <path d="M62 70 Q105 56 148 70 L156 140 Q105 150 54 140 Z" fill="#d9dfea"/>
+      <path d="M54 140 Q105 152 156 140 L160 168 Q105 180 50 168 Z" fill="#c4ccdb"/>
+      <rect x="40" y="150" width="130" height="16" rx="6" fill="#13213c"/>
+      <rect x="90" y="128" width="30" height="54" rx="6" fill="#0e9f9a" stroke="#fff" stroke-width="2.5"/>
+      <rect x="96" y="134" width="18" height="38" rx="2" fill="#bff0ec"/>
+      <path d="M60 176 L64 216 M150 176 L146 216" stroke="#c4ccdb" stroke-width="22" stroke-linecap="round"/>
+      <text x="176" y="138" font-size="12" fill="#5b6577">천골</text><path d="M172 134 L124 150" stroke="#5b6577" stroke-dasharray="3 3"/>
+    </svg>
+    <ul class="guide-list">
+      <li><b class="n">1</b><div>폰을 <b>세로</b>로, <b>화면이 바깥(뒤쪽)</b>을 향하게 스트랩에 끼웁니다. 위치는 엉덩이 바로 위 <b>천골</b>.</div></li>
+      <li><b class="n">2</b><div>시작을 누르면 착용 준비 시간이 주어집니다. 음성 안내에 따라 <b>바르게 서서 3초</b> 멈추세요.</div></li>
+      <li><b class="n">3</b><div>"출발" 소리가 나면 <b>오른발부터</b> 평소 속도로 10m를 걷고, 끝에서 <b>멈춰 서면</b> 자동 종료됩니다.</div></li>
+    </ul>
+    <div class="btns" style="width:100%"><button class="btn primary" id="b-go">시작</button><button class="btn ghost sm" data-go="s-home">뒤로</button></div>
+    <div class="err" id="guide-err"></div>
+  </div>
+</section>
+
+<!-- 3. 진행(준비/보정/카운트다운/측정) -->
+<section class="screen" id="s-run">
+  <div class="center">
+    <div class="stage" id="run-stage">착용 준비</div>
+    <div class="big" id="run-big">8</div>
+    <div class="msg" id="run-msg">폰을 스트랩에 끼우고<br>바르게 서세요</div>
+    <div class="bar" id="run-bar" style="visibility:hidden"><i></i></div>
+    <div class="live" id="run-live" style="display:none">
+      <div><b id="lv-time">0.0</b><span>경과(초)</span></div>
+      <div><b id="lv-steps">0</b><span>걸음(실시간)</span></div>
+      <div><b id="lv-hz">-</b><span>샘플링 Hz</span></div>
+    </div>
+    <div class="btns" style="width:100%"><button class="btn red" id="b-stop" style="display:none">측정 종료</button><button class="btn ghost sm" id="b-cancel">취소</button></div>
+  </div>
+</section>
+
+<!-- 4. 분석 중 -->
+<section class="screen" id="s-analyze">
+  <div class="center"><div class="spin"></div><div class="msg">보행 지표 계산 중</div><div class="muted small" id="an-sub">걸음 검출 → 좌우 구분 → 골반 각도 → 지면반발력</div></div>
+</section>
+
+<!-- 5. 결과지 -->
+<section class="screen" id="s-result"></section>
+
+</div>
+
+<script>
+/*__GAIT_CORE__*/
+</script>
+<script>
+'use strict';
+/* =========================================================
+   설정: LLM 해석 API를 붙이면 아래 주소를 채우세요.
+   POST {metrics, subject(이름 제외)} → {summary:[3줄], exercises:[{name,dose,why}]}
+   비워 두면 규칙 기반 해석으로 동작합니다.
+   ========================================================= */
+const AI_ENDPOINT = '';
+
+const $ = s => document.querySelector(s);
+const show = id => { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0, 0); };
+const f1 = (v, d = 1) => (isFinite(v) ? v.toFixed(d) : '-');
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => show(b.dataset.go));
+document.querySelectorAll('#f-sex button').forEach(b => b.onclick = () => { document.querySelectorAll('#f-sex button').forEach(x => x.classList.toggle('on', x === b)); });
+
+function subject() {
+  const now = new Date();
+  const birth = +$('#f-birth').value || null;
+  return {
+    name: $('#f-name').value.trim() || '홍길동',
+    birth, age: birth ? now.getFullYear() - birth : 30,
+    sex: document.querySelector('#f-sex .on').dataset.v,
+    height: +$('#f-height').value || null, weight: +$('#f-weight').value || null,
+    org: $('#f-org').value.trim(), distance: +$('#f-dist').value || 10,
+  };
+}
+
+/* ---------- 소리·진동·화면 유지 ---------- */
+let actx = null, wakeLock = null;
+function unlockAudio() {
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {}
+  say(' ');
+}
+function beep(freq = 880, ms = 160) {
+  try { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = freq; o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(0.25, actx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + ms / 1000); o.start(); o.stop(actx.currentTime + ms / 1000); } catch (e) {}
+}
+function say(t) { try { const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR'; u.rate = 1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {} }
+const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+async function keepAwake() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+function releaseAwake() { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; }
+
+/* ---------- 센서 수집 ---------- */
+let buf = [], listening = false;
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity || {}, r = e.rotationRate || {};
+  if (a.x == null) return;
+  buf.push({ t: performance.now(), ax: a.x, ay: a.y, az: a.z, gx: r.beta || 0, gy: r.gamma || 0, gz: r.alpha || 0 });
+}
+async function requestSensors() {
+  const DM = window.DeviceMotionEvent;
+  if (!DM) throw new Error('이 기기/브라우저는 모션 센서를 지원하지 않습니다.');
+  if (typeof DM.requestPermission === 'function') {
+    const p = await DM.requestPermission();
+    if (p !== 'granted') throw new Error('모션 센서 권한이 거부되었습니다. Safari 설정 → 동작 및 방향 접근을 허용해 주세요.');
+  }
+  if (!window.isSecureContext) throw new Error('센서는 HTTPS 주소에서만 동작합니다. https:// 로 접속해 주세요.');
+  if (!listening) { window.addEventListener('devicemotion', onMotion); listening = true; }
+  buf = [];
+  await new Promise(r => setTimeout(r, 700));
+  if (buf.length < 5) throw new Error('센서 데이터가 들어오지 않습니다. 휴대폰에서 HTTPS 주소로 열었는지 확인하세요. (PC에서는 데모 모드를 사용하세요)');
+}
+function stopSensors() { window.removeEventListener('devicemotion', onMotion); listening = false; }
+
+/* ---------- 측정 플로우 ---------- */
+let session = null;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function setRun(stage, big, msg) { $('#run-stage').textContent = stage; $('#run-big').textContent = big; $('#run-msg').innerHTML = msg; }
+
+$('#b-start').onclick = () => { $('#home-err').style.display = 'none'; show('s-guide'); };
+$('#b-go').onclick = async () => {
+  unlockAudio(); $('#guide-err').style.display = 'none';
+  try { await requestSensors(); }
+  catch (e) { $('#guide-err').textContent = e.message; $('#guide-err').style.display = 'block'; return; }
+  keepAwake();
+  runSession().catch(err => { console.error(err); abort(); });
+};
+$('#b-cancel').onclick = () => abort();
+function abort() { if (session) session.cancelled = true; stopSensors(); releaseAwake(); speechSynthesis.cancel && speechSynthesis.cancel(); show('s-home'); }
+
+async function runSession() {
+  const sub = subject(), s = (session = { cancelled: false, stop: false });
+  show('s-run'); $('#run-live').style.display = 'none'; $('#b-stop').style.display = 'none'; $('#run-bar').style.visibility = 'hidden';
+  // (1) 착용 준비
+  const prep = Math.max(3, +$('#f-prep').value || 8);
+  say('폰을 스트랩에 끼우고 바르게 서세요');
+  for (let i = prep; i > 0; i--) { if (s.cancelled) return; setRun('착용 준비', i, '폰을 스트랩에 끼우고<br>바르게 서세요'); await sleep(1000); }
+  // (2) 정지 보정 3초 (최대 3회)
+  let calib = null;
+  for (let attempt = 1; attempt <= 3 && !calib; attempt++) {
+    say('움직이지 마세요'); setRun('정지 보정', '', '움직이지 말고<br>바르게 서 있으세요'); $('#run-big').textContent = '';
+    $('#run-bar').style.visibility = 'visible';
+    buf = []; const t0 = performance.now();
+    while (performance.now() - t0 < 3000) { if (s.cancelled) return; $('#run-bar i').style.width = ((performance.now() - t0) / 30) + '%'; await sleep(50); }
+    const c = buf.slice();
+    const mags = c.map(p => Math.hypot(p.ax, p.ay, p.az));
+    const m = mags.reduce((a, b) => a + b, 0) / mags.length;
+    const sdv = Math.sqrt(mags.reduce((a, b) => a + (b - m) ** 2, 0) / mags.length);
+    const g = ['ax', 'ay', 'az'].map(k => c.reduce((a, p) => a + p[k], 0) / c.length);
+    const tilt = Math.acos(Math.min(1, Math.abs(g[1]) / (Math.hypot(...g) || 1))) * 180 / Math.PI;
+    if (sdv < 0.35 || attempt === 3) {
+      calib = { g, tilt, sd: sdv };
+      if (tilt > 30 && attempt < 3) { calib = null; say('폰이 기울어져 있어요. 세로로 바르게 끼워 주세요'); setRun('정지 보정', '', `폰이 ${tilt.toFixed(0)}° 기울어져 있어요<br>세로로 바르게 끼워 주세요`); await sleep(3500); }
+    } else { say('흔들림이 감지됐어요. 다시 멈춰 주세요'); setRun('정지 보정', '', '흔들림 감지<br>다시 멈춰 주세요'); await sleep(2000); }
+  }
+  $('#run-bar').style.visibility = 'hidden';
+  // (3) 카운트다운
+  for (const n of [3, 2, 1]) { if (s.cancelled) return; setRun('곧 출발', n, '오른발부터 출발합니다'); say(String(n)); beep(660); buzz(80); await sleep(1000); }
+  setRun('측정 중', 'GO', '평소 속도로 10m 걸은 뒤<br>멈춰 서세요'); say('출발'); beep(1100, 350); buzz(250);
+  // (4) 측정 + 자동 종료
+  buf = []; const start = performance.now();
+  $('#run-live').style.display = 'grid'; $('#b-stop').style.display = 'flex';
+  $('#b-stop').onclick = () => (s.stop = true);
+  const G = Math.hypot(...calib.g);
+  let walking = false, stillSince = null, steps = 0, lastStep = 0, above = false;
+  let scanned = 0;
+  while (!s.cancelled && !s.stop) {
+    await sleep(100);
+    const now = performance.now(), el = (now - start) / 1000;
+    // 실시간 걸음(시연용 표시): |a|-G 가 문턱을 넘는 순간
+    for (; scanned < buf.length; scanned++) {
+      const p = buf[scanned], v = Math.hypot(p.ax, p.ay, p.az) - G;
+      if (!above && v > 1.6 && p.t - lastStep > 300) { steps++; lastStep = p.t; above = true; }
+      if (v < 0.5) above = false;
+    }
+    const win = buf.filter(p => p.t > now - 500).map(p => Math.hypot(p.ax, p.ay, p.az) - G);
+    const m = win.reduce((a, b) => a + b, 0) / (win.length || 1);
+    const sdv = Math.sqrt(win.reduce((a, b) => a + (b - m) ** 2, 0) / (win.length || 1));
+    if (sdv > 0.9) { walking = true; stillSince = null; }
+    else if (walking && sdv < 0.3) { stillSince = stillSince || now; if (now - stillSince > 1500) break; }
+    const hz = buf.length > 10 ? (buf.length - 1) / ((buf[buf.length - 1].t - buf[0].t) / 1000) : 0;
+    $('#lv-time').textContent = el.toFixed(1); $('#lv-steps').textContent = steps; $('#lv-hz').textContent = hz ? hz.toFixed(0) : '-';
+    $('#run-msg').innerHTML = walking ? (stillSince ? '정지 감지 중…' : '걷는 중') : '출발하세요';
+    if (el > 60) break;
+  }
+  if (s.cancelled) return;
+  stopSensors(); releaseAwake(); say('측정 완료'); beep(880, 120); setTimeout(() => beep(1320, 220), 140); buzz([120, 80, 120]);
+  const raw = { samples: buf.map(p => ({ ...p, t: p.t - start })), calib: { g: calib.g }, meta: { tilt: calib.tilt, ua: navigator.userAgent } };
+  finish(raw, sub);
+}
+
+/* ---------- 분석 → 결과 ---------- */
+let last = null;
+async function finish(raw, sub, opts = {}) {
+  show('s-analyze');
+  const t0 = performance.now();
+  const res = GaitCore.analyze(raw, sub, { distance: sub.distance, flipLR: opts.flipLR });
+  const calcMs = performance.now() - t0;
+  await sleep(Math.max(0, 900 - calcMs));   // 분석 화면을 잠깐 보여줌 (총 3초 이내)
+  last = { raw, sub, res, opts, calcMs };
+  if (!res.ok) { renderFail(res); return; }
+  const ref = GaitCore.refs(sub);
+  const sc = GaitCore.score(res, ref);
+  const ai = interpret(res, ref, sub);
+  renderResult(res, ref, sc, sub, ai, calcMs, raw);
+  if (AI_ENDPOINT) fetchAI(res, ref, sub);
+}
+
+function renderFail(res) {
+  $('#s-result').innerHTML = `<div class="disc">본 결과는 참고용이며 의학적 진단을 대체하지 않습니다</div>
+  <div class="rbody" style="padding-top:30px"><div class="card"><h3 style="margin-bottom:8px">재측정이 필요합니다</h3>
+  <p>${res.error}</p>${res.quality ? `<p class="small muted" style="margin-top:8px">샘플링 ${f1(res.quality.fsRaw, 0)} Hz · 걸음 ${res.quality.steps ?? '-'}보</p>` : ''}
+  <p class="small muted" style="margin-top:8px">폰이 스트랩에 단단히 고정됐는지, 10m를 끝까지 걸었는지 확인해 주세요.</p></div></div>
+  <div class="actions btns"><button class="btn primary" onclick="show('s-guide')">다시 측정</button><button class="btn ghost sm" onclick="downloadCSV()">원시 데이터 CSV</button><button class="btn ghost sm" onclick="show('s-home')">처음으로</button></div>`;
+  show('s-result');
+}
+
+/* ---------- 해석·운동 권장 (규칙 기반, LLM 연결 시 대체) ---------- */
+function interpret(r, ref, sub) {
+  const G = GaitCore.grade, items = [];
+  const push = (key, label, v, rg, unit, tolKey) => { const g = G(v, rg, tolKey); items.push({ key, label, v, rg, unit, g }); };
+  push('speed', '보행 속도', r.general.speed, ref.speed, 'm/s');
+  push('cadence', '분속수', r.general.cadence, ref.cadence, '걸음/분');
+  push('gct', '좌우 GCT 밸런스', r.gct.balance, ref.gctBalance, '%', 'gctBalance');
+  push('siStep', '걸음 시간 대칭(SI)', r.symmetry.stepTime, ref.si, '%');
+  push('siLen', '보폭 대칭(SI)', r.symmetry.stepLength, ref.si, '%');
+  if (r.pelvis.available) {
+    push('rot', '골반 회전', r.pelvis.rotation.rom, ref.rotation, '°');
+    push('obl', '골반 경사', r.pelvis.obliquity.rom, ref.obliquity, '°');
+    push('tilt', '골반 기울기', r.pelvis.tilt.rom, ref.tilt, '°');
+  }
+  push('grf', '수직 GRF 피크', Math.max(r.grf.left, r.grf.right), ref.grfPeak, 'BW');
+  push('cv', '활보 시간 변동(CV)', r.symmetry.cv, ref.cv, '%');
+  const rank = { severe: 2, caution: 1, normal: 0, na: 0 };
+  const flagged = items.filter(i => rank[i.g.level] > 0).sort((a, b) => rank[b.g.level] - rank[a.g.level] || b.g.dev - a.g.dev);
+  const leanLeft = r.gct.balance > 50;
+  const weak = leanLeft ? '오른쪽' : '왼쪽';
+  const dirTxt = i => i.g.dir === 'low' ? '낮음' : '높음';
+  const findings = flagged.slice(0, 3).map(i => {
+    if (i.key === 'gct') return `<b>좌우 GCT 밸런스</b> ${f1(i.v)}% — 체중 지지가 ${leanLeft ? '왼쪽' : '오른쪽'}으로 치우침 (정상 ${i.rg[0]}~${i.rg[1]}%) <span class="badge ${i.g.level}">${i.g.label}</span>`;
+    return `<b>${i.label}</b> ${f1(i.v, i.unit === 'BW' || i.unit === 'm/s' ? 2 : 1)}${i.unit} — 참고 범위(${i.rg[0]}~${i.rg[1]}${i.unit})보다 ${dirTxt(i)} <span class="badge ${i.g.level}">${i.g.label}</span>`;
+  });
+  if (!findings.length) findings.push('모든 주요 지표가 참고 범위 안에 있습니다. 현재 보행 패턴을 유지하세요.');
+  // 운동 권장: ACSM FITT 원칙 기반 운동 후보 목록 (건강운동관리사 감수 초안)
+  const lib = {
+    speed: { name: '빠르게 걷기 인터벌', dose: '주 3~5회 · 20~30분 · 3분 보통/1분 빠르게 반복 (RPE 11~13)', why: '보행 속도와 심폐 지구력 향상' },
+    sts: { name: '의자 앉았다 일어서기', dose: '주 2~3회 · 10~12회 × 2~3세트', why: '하지 근력, 보행 추진력' },
+    balance: { name: `${weak} 한발 서기`, dose: `매일 · 30초 × 3세트 (${weak} 1세트 추가), 벽 옆에서`, why: '체중 지지가 짧은 쪽의 균형·지지력 강화' },
+    stepup: { name: `${weak} 리드 스텝업`, dose: '주 2~3회 · 10회 × 2~3세트 (낮은 계단)', why: '좌우 하중 차이 줄이기' },
+    abd: { name: '옆으로 누워 다리 들기 · 클램쉘', dose: '주 3회 · 12~15회 × 2~3세트', why: '중둔근 강화로 골반 경사(좌우 처짐) 조절' },
+    mob: { name: '골반·흉추 회전 가동성 (오픈북)', dose: '매일 · 좌우 8~10회 × 2세트', why: '골반 회전 가동범위 확보' },
+    core: { name: '데드버그 · 브릿지', dose: '주 3회 · 10~12회 × 2~3세트', why: '골반 전후 기울기 안정화' },
+    calf: { name: '천천히 내리는 카프레이즈', dose: '주 3회 · 3초 내리기 × 12회 × 2세트', why: '착지 충격 흡수 능력 향상' },
+    rhythm: { name: '메트로놈 리듬 걷기', dose: `주 3회 · 10분 · ${Math.round(Math.min(115, Math.max(100, r.general.cadence)))} BPM에 맞춰`, why: '걸음 리듬 일정하게' },
+    keep: { name: '중강도 유산소 + 근력 유지', dose: '주 150분 중강도 걷기 + 주 2회 근력운동', why: 'ACSM 일반 권고 수준 유지' },
+  };
+  const pick = new Set();
+  for (const i of flagged) {
+    if (i.key === 'speed' || i.key === 'cadence') { pick.add('speed'); pick.add('sts'); }
+    if (i.key === 'gct' || i.key === 'siStep' || i.key === 'siLen') { pick.add('balance'); pick.add('stepup'); }
+    if (i.key === 'obl') pick.add(i.g.dir === 'high' ? 'abd' : 'mob');
+    if (i.key === 'rot') pick.add('mob');
+    if (i.key === 'tilt') pick.add('core');
+    if (i.key === 'grf') pick.add('calf');
+    if (i.key === 'cv') pick.add('rhythm');
+  }
+  if (!pick.size) pick.add('keep');
+  return { findings, exercises: [...pick].slice(0, 3).map(k => lib[k]), items, source: 'rule' };
+}
+
+async function fetchAI(res, ref, sub) {
+  try {
+    const body = { subject: { age: sub.age, sex: sub.sex, height: sub.height, weight: sub.weight }, metrics: { ...res, trace: undefined }, refs: ref };
+    const r = await fetch(AI_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (j.summary && j.exercises) renderAdvice({ findings: j.summary, exercises: j.exercises, source: 'ai' });
+  } catch (e) { console.warn('AI 해석 실패, 규칙 기반 유지', e); }
+}
+
+/* ---------- SVG 위젯 ---------- */
+const COL = { normal: '#15803d', caution: '#c2620a', severe: '#c81e1e', na: '#5b6577' };
+function gauge(v) {   // 반원 게이지 40~60%
+  const lo = 40, hi = 60, cx = 120, cy = 112, R = 88;
+  const ang = x => Math.PI * (1 - (Math.min(hi, Math.max(lo, x)) - lo) / (hi - lo));
+  const pt = (x, rr = R) => [cx + rr * Math.cos(ang(x)), cy - rr * Math.sin(ang(x))];
+  const arc = (a, b, c) => { const [x1, y1] = pt(a), [x2, y2] = pt(b); return `<path d="M${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2}" stroke="${c}" stroke-width="16" fill="none"/>`; };
+  const [nx, ny] = pt(v, R - 22);
+  return `<svg viewBox="0 0 240 132" width="100%" style="max-width:300px;display:block;margin:0 auto">
+    ${arc(40, 45.2, '#f3c4c4')}${arc(45.2, 47.6, '#f8dcb6')}${arc(47.6, 52.4, '#bfe5cc')}${arc(52.4, 54.8, '#f8dcb6')}${arc(54.8, 60, '#f3c4c4')}
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#13213c" stroke-width="4" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="7" fill="#13213c"/>
+    <text x="22" y="128" font-size="11" fill="#5b6577">오른쪽</text><text x="186" y="128" font-size="11" fill="#5b6577">왼쪽</text>
+    <text x="${cx}" y="${cy - 30}" text-anchor="middle" font-size="26" font-weight="800" fill="#18202e">${f1(v)}%</text></svg>`;
+}
+function rangeBar(v, [lo, hi], min, max, level) {   // 정상 범위 밴드 + 값 마커
+  const W = 100, x = p => (Math.min(max, Math.max(min, p)) - min) / (max - min) * W;
+  return `<svg viewBox="0 0 100 20" width="100%" height="22" preserveAspectRatio="none">
+    <rect x="0" y="8" width="100" height="5" rx="2.5" fill="#e3e7ee"/><rect x="${x(lo)}" y="8" width="${x(hi) - x(lo)}" height="5" fill="#9fd8b4"/>
+    <rect x="${x(v) - 1.2}" y="2" width="2.4" height="17" rx="1" fill="${COL[level]}"/></svg>`;
+}
+function curve(data, { h = 120, base = null, band = null, color = '#0e9f9a', yfmt = v => v.toFixed(1), unit = '' } = {}) {
+  if (!data || !data.length) return '';
+  const W = 300, P = 28, lo = Math.min(...data, base ?? Infinity), hi = Math.max(...data, base ?? -Infinity);
+  const pad = (hi - lo) * 0.15 || 1, y0 = lo - pad, y1 = hi + pad;
+  const X = i => P + i / (data.length - 1) * (W - P - 6), Y = v => h - 18 - (v - y0) / (y1 - y0) * (h - 30);
+  const d = data.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join('');
+  return `<svg viewBox="0 0 ${W} ${h}" width="100%">
+    ${base != null ? `<line x1="${P}" x2="${W - 6}" y1="${Y(base)}" y2="${Y(base)}" stroke="#9aa3b2" stroke-dasharray="4 4"/><text x="${W - 8}" y="${Y(base) - 4}" font-size="10" text-anchor="end" fill="#5b6577">${yfmt(base)}${unit}</text>` : ''}
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linejoin="round"/>
+    <text x="${P - 4}" y="${Y(hi) + 4}" font-size="10" text-anchor="end" fill="#5b6577">${yfmt(hi)}</text>
+    <text x="${P - 4}" y="${Y(lo) + 4}" font-size="10" text-anchor="end" fill="#5b6577">${yfmt(lo)}</text>
+    <text x="${P}" y="${h - 3}" font-size="10" fill="#5b6577">0%</text><text x="${(P + W) / 2}" y="${h - 3}" font-size="10" text-anchor="middle" fill="#5b6577">활보 주기</text><text x="${W - 6}" y="${h - 3}" font-size="10" text-anchor="end" fill="#5b6577">100%</text></svg>`;
+}
+function ring(score) {
+  const R = 42, C = 2 * Math.PI * R, c = score >= 80 ? '#15803d' : score >= 60 ? '#c2620a' : '#c81e1e';
+  return `<svg width="110" height="110" viewBox="0 0 110 110"><circle cx="55" cy="55" r="${R}" stroke="#e3e7ee" stroke-width="11" fill="none"/>
+    <circle cx="55" cy="55" r="${R}" stroke="${c}" stroke-width="11" fill="none" stroke-linecap="round" stroke-dasharray="${C * score / 100} ${C}" transform="rotate(-90 55 55)"/>
+    <text x="55" y="60" text-anchor="middle" font-size="28" font-weight="800" fill="#18202e">${score}</text><text x="55" y="78" text-anchor="middle" font-size="10" fill="#5b6577">/ 100</text></svg>`;
+}
+function hbar(label, v, max = 30, th = 10) {
+  const g = GaitCore.grade(v, [0, th]);
+  const w = Math.min(100, v / max * 100), t = th / max * 100;
+  return `<div class="mrow" style="grid-template-columns:120px 1fr 56px"><div class="nm">${label}</div>
+    <svg viewBox="0 0 100 16" width="100%" height="18" preserveAspectRatio="none"><rect x="0" y="4" width="100" height="8" rx="4" fill="#eef1f5"/><rect x="0" y="4" width="${w}" height="8" rx="4" fill="${COL[g.level]}"/><line x1="${t}" x2="${t}" y1="0" y2="16" stroke="#18202e" stroke-width=".8" stroke-dasharray="2 1.5"/></svg>
+    <div class="val" style="font-size:15px">${f1(v)}%</div></div>`;
+}
+const badge = g => `<span class="badge ${g.level}">${g.label}</span>`;
+const mask = n => n.length <= 1 ? n : n.length === 2 ? n[0] + '*' : n[0] + '*'.repeat(n.length - 2) + n[n.length - 1];
+
+/* ---------- 결과지 렌더 ---------- */
+function renderResult(r, ref, sc, sub, ai, calcMs, raw) {
+  const G = GaitCore.grade, now = new Date();
+  const gSpeed = G(r.general.speed, ref.speed), gCad = G(r.general.cadence, ref.cadence), gBal = G(r.gct.balance, ref.gctBalance, 'gctBalance');
+  const sexKo = sub.sex === 'F' ? '여성' : '남성';
+  const lean = r.gct.balance > ref.gctBalance[1] ? '왼쪽 치우침' : r.gct.balance < ref.gctBalance[0] ? '오른쪽 치우침' : '균형';
+  const slRef = ref.stepLength;
+  const pel = r.pelvis.available ? [['회전', '수평면 · Yaw', r.pelvis.rotation, ref.rotation, 0, 20, '#0e9f9a'], ['경사', '전두면 · Roll', r.pelvis.obliquity, ref.obliquity, 0, 16, '#3b6fd8'], ['기울기', '시상면 · Pitch', r.pelvis.tilt, ref.tilt, 0, 10, '#8a5cd8']] : [];
+  const birthTxt = sub.birth ? `${sub.birth}년 (만 ${sub.age}세)` : '-';
+  const interpTxt = sub.birth
+    ? `${sub.birth}년생 ${sexKo}의 경우 만 ${sub.age}세로 <b>${ref.ageGroup} ${sexKo}</b> 기준에 해당합니다. 현재 보행 속도 ${f1(r.general.speed, 2)} m/s는 이 연령대 ${sexKo}의 <strong class="${gSpeed.level}">${gSpeed.label}</strong> 범위에 속합니다 (정상: ${ref.speed[0]} ~ ${ref.speed[1]} m/s). 분속수 ${f1(r.general.cadence, 0)}걸음/분은 <strong class="${gCad.level}">${gCad.label}</strong> 범위입니다 (정상: ${ref.cadence[0]} ~ ${ref.cadence[1]}).`
+    : `보행 속도 ${f1(r.general.speed, 2)} m/s는 <strong class="${gSpeed.level}">${gSpeed.label}</strong>, 분속수 ${f1(r.general.cadence, 0)}걸음/분은 <strong class="${gCad.level}">${gCad.label}</strong> 범위입니다. 출생연도를 입력하면 연령대 기준으로 비교합니다.`;
+  const q = r.quality;
+  const stance = r.stride.stancePct, ds = r.stride.doubleSupportPct;
+
+  $('#s-result').innerHTML = `
+  <div class="disc">본 결과는 참고용이며 의학적 진단을 대체하지 않습니다${raw.meta && raw.meta.synthetic ? ' · 데모 데이터' : ''}</div>
+  <div class="rhead"><div><h2>10미터 보행 검사 결과보고서</h2><small>스마트폰 골반 IMU 측정 · 계산 ${calcMs.toFixed(0)}ms</small></div>
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#5fe0d8" stroke-width="2.2" stroke-linecap="round"><path d="M4 18c3-8 5-8 8 0s5 8 8 0"/><circle cx="12" cy="5" r="2.2" fill="#5fe0d8" stroke="none"/></svg></div>
+  <div class="rbody">
+
+  <div class="card"><div class="who"><div class="ava">${sub.name[0]}</div>
+    <dl class="kv"><div><dt>이름</dt><dd>${mask(sub.name)}</dd></div><div><dt>성별</dt><dd>${sexKo}</dd></div>
+    <div><dt>생년</dt><dd>${birthTxt}</dd></div><div><dt>키 / 체중</dt><dd>${sub.height || '-'}cm / ${sub.weight || '-'}kg</dd></div>
+    <div><dt>검사기관</dt><dd>${sub.org || '-'}</dd></div><div><dt>검사일시</dt><dd>${now.toLocaleDateString('ko-KR')} ${now.toTimeString().slice(0, 5)}</dd></div></dl></div>
+    <div class="qual"><span class="badge ${q.ok ? 'normal' : 'caution'}">${q.ok ? '측정 품질 통과' : '재측정 권장'}</span><span>${f1(q.fsRaw, 0)} Hz · 결측 ${f1(q.missing)}% · ${q.steps}보</span>${q.issues.map(i => `<span>· ${i}</span>`).join('')}</div></div>
+
+  <div class="card"><div class="ct"><h3>일반</h3><span class="muted small">${sub.distance}m 기준</span></div>
+    <div class="tiles">
+      <div class="tile"><span>소요시간</span><b>${f1(r.general.duration)}</b><em>초</em></div>
+      <div class="tile"><span>걸음 수</span><b>${r.general.steps}</b><em>보</em></div>
+      <div class="tile"><span>분속수</span><b>${f1(r.general.cadence, 0)}</b><em>걸음/분</em><br>${badge(gCad)}</div>
+      <div class="tile"><span>보행 속도</span><b>${f1(r.general.speed, 2)}</b><em>m/s</em><br>${badge(gSpeed)}</div>
+    </div>
+    <div class="interp">${interpTxt}</div></div>
+
+  <div class="card"><div class="ct"><h3>좌우 GCT 밸런스</h3>${badge(gBal)}</div>
+    ${gauge(r.gct.balance)}
+    <p style="text-align:center;font-weight:700;margin:4px 0 8px;color:${COL[gBal.level]}">${lean}</p>
+    <div class="lr"><div class="l"><span>왼발 평균 접촉시간</span><b>${f1(r.gct.left, 3)}<small style="font-size:13px"> 초</small></b></div>
+    <div class="r"><span>오른발 평균 접촉시간</span><b>${f1(r.gct.right, 3)}<small style="font-size:13px"> 초</small></b></div></div>
+    <p class="small muted" style="margin-top:8px">왼발 접촉시간 ÷ 양발 합. 50%가 완전 대칭, 정상 ${ref.gctBalance[0]}~${ref.gctBalance[1]}%</p></div>
+
+  <div class="card"><div class="ct"><h3>보폭 · 보행 주기</h3><span class="muted small">활보 ${f1(r.stride.strideLength, 2)} m</span></div>
+    ${[['왼발 보폭', r.stride.left, 'L'], ['오른발 보폭', r.stride.right, 'R']].map(([n, v, s]) => { const g = G(v, slRef); return `<div class="mrow"><div class="nm" style="color:var(--${s})">${n}</div>${rangeBar(v, slRef, 0.3, 1.0, g.level)}<div class="val">${f1(v, 2)}<small style="font-size:11px"> m</small></div></div>`; }).join('')}
+    <p class="small muted" style="margin:10px 0 2px">한 활보(${f1(r.stride.strideTime, 2)}초) 안의 비율</p>
+    <div class="cyc"><div style="width:${stance}%;background:var(--navy)">입각기 ${f1(stance, 0)}%</div><div style="width:${100 - stance}%;background:var(--teal)">유각기 ${f1(100 - stance, 0)}%</div></div>
+    <p class="small muted">양하지지기 ${f1(ds, 0)}% · 참고: 입각 약 60% / 유각 40%, 양하지지 약 20%</p></div>
+
+  ${r.pelvis.available ? `<div class="card"><div class="ct"><h3>골반 움직임 <i>ROM</i></h3></div>
+    ${pel.map(([n, sub2, p, rg, mn, mx]) => { const g = G(p.rom, rg); return `<div class="mrow"><div class="nm">${n}<small>${sub2}</small></div>${rangeBar(p.rom, rg, mn, mx, g.level)}<div class="val">${f1(p.rom)}°<br>${badge(g)}</div></div>`; }).join('')}
+    <p class="small muted" style="margin:8px 0 2px">평균 활보 골반 각도 곡선 (오른발 접지 시작)</p>
+    ${pel.map(([n, , p, , , , c]) => `<div style="margin-top:4px"><span class="small" style="font-weight:700;color:${c}">${n}</span>${curve(p.curve, { h: 84, base: 0, color: c, unit: '°' })}</div>`).join('')}</div>` : ''}
+
+  <div class="card"><div class="ct"><h3>지면반발력 <i>추정</i></h3>${badge(G(Math.max(r.grf.left, r.grf.right), ref.grfPeak))}</div>
+    ${curve(r.grf.curve, { h: 140, base: 1, color: '#13213c', yfmt: v => v.toFixed(2), unit: ' BW' })}
+    <div class="lr"><div class="l"><span>왼발 수직 피크</span><b>${f1(r.grf.left, 2)}<small style="font-size:13px"> BW</small></b></div>
+    <div class="r"><span>오른발 수직 피크</span><b>${f1(r.grf.right, 2)}<small style="font-size:13px"> BW</small></b></div></div>
+    <p class="small muted" style="margin-top:8px">부하율 ${f1(r.grf.loadingRate)} BW/s${sub.weight ? ` · 피크 약 ${f1(Math.max(r.grf.left, r.grf.right) * sub.weight * 9.81, 0)} N` : ''} · 골반 가속도 기반 질량중심 추정치</p></div>
+
+  <div class="card"><div class="ct"><h3>대칭성 · 규칙성</h3><span class="muted small">점선 = 10%</span></div>
+    ${hbar('걸음 시간 SI', r.symmetry.stepTime)}${hbar('접촉시간 SI', r.symmetry.contact)}${hbar('보폭 SI', r.symmetry.stepLength)}${hbar('GRF 피크 SI', r.symmetry.grf)}
+    <div class="tiles" style="margin-top:10px"><div class="tile"><span>규칙성 Ad1/Ad2</span><b style="font-size:22px">${f1(r.symmetry.regularityRatio, 2)}</b><em>1에 가까울수록 대칭</em></div>
+    <div class="tile"><span>활보 시간 변동 CV</span><b style="font-size:22px">${f1(r.symmetry.cv)}</b><em>%</em><br>${badge(G(r.symmetry.cv, ref.cv))}</div></div></div>
+
+  <div class="card" id="advice-card"></div>
+
+  <details class="card noprint"><summary class="small muted" style="cursor:pointer">분석 신호 보기 (개발·검증용)</summary>
+    <div id="trace" style="margin-top:10px"></div>
+    <p class="small muted">수직 가속도와 검출된 초기접지(IC). 파랑=왼발, 주황=오른발. 걸음 수를 영상과 비교해 검증하세요.</p></details>
+  </div>
+  <div class="actions btns">
+    <button class="btn primary" id="r-again">다시 측정</button>
+    <div class="btns two" style="margin-top:0"><button class="btn ghost sm" onclick="window.print()">결과지 저장/인쇄</button><button class="btn ghost sm" onclick="downloadCSV()">원시 데이터 CSV</button></div>
+    <div class="btns two" style="margin-top:0"><button class="btn ghost sm" id="r-flip">좌우 반전</button><button class="btn ghost sm" onclick="show('s-home')">처음으로</button></div>
+  </div>
+  <div class="foot">PelvisWalk v${GaitCore.version} · 참고 범위는 문헌 기반 초안이며 팀 검증 데이터로 보정 예정입니다.</div>`;
+
+  document.getElementById('advice-card').dataset.score = sc.total;
+  renderAdvice(ai, sc);
+  $('#r-again').onclick = () => show(last.raw.meta && last.raw.meta.synthetic ? 's-home' : 's-guide');
+  $('#r-flip').onclick = () => finish(last.raw, last.sub, { ...last.opts, flipLR: !last.opts.flipLR });
+  drawTrace(r);
+  show('s-result');
+}
+
+function renderAdvice(ai, sc) {
+  const el = document.getElementById('advice-card'); if (!el) return;
+  const score = sc ? sc.total : +el.dataset.score;
+  if (sc) el.dataset.parts = JSON.stringify(sc.parts);
+  const parts = JSON.parse(el.dataset.parts || '{}');
+  const pl = { speed: '속도', symmetry: '대칭', pelvis: '골반', rhythm: '리듬', impact: '충격' };
+  el.innerHTML = `<div class="ct"><h3>종합 소견 ${ai.source === 'ai' ? '<span class="tag">AI 해석</span>' : ''}</h3></div>
+    <div class="score">${ring(score)}<div class="small" style="flex:1;display:grid;gap:3px">${Object.entries(parts).map(([k, v]) => `<div style="display:flex;justify-content:space-between"><span class="muted">${pl[k]}</span><b>${Math.round(v)}</b></div>`).join('')}</div></div>
+    <ul class="find">${ai.findings.map(t => `<li>${t}</li>`).join('')}</ul>
+    <h3 style="font-size:15px;margin-top:14px">권장 운동 <span class="muted small" style="font-weight:400">FITT 기준</span></h3>
+    <div class="ex">${ai.exercises.map(e => `<div><b>${e.name}</b><p>${e.dose}</p><p>목적: ${e.why}</p></div>`).join('')}</div>
+    <p class="small muted" style="margin-top:8px">통증·어지럼이 있으면 중단하고 전문가와 상담하세요.</p>`;
+}
+
+function drawTrace(r) {
+  const tr = r.trace, W = 340, H = 140, a = tr.aV;
+  const step = Math.max(1, Math.floor(a.length / 600));
+  const lo = Math.min(...a), hi = Math.max(...a);
+  const X = i => i / (a.length - 1) * W, Y = v => H - 10 - (v - lo) / (hi - lo || 1) * (H - 20);
+  let d = ''; for (let i = 0; i < a.length; i += step) d += `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(a[i]).toFixed(1)}`;
+  const marks = tr.ic.map((ic, k) => `<line x1="${X(ic)}" x2="${X(ic)}" y1="6" y2="${H - 6}" stroke="${tr.side[k] === 'L' ? '#3b6fd8' : '#e0703a'}" stroke-width="1.4"/>`).join('');
+  document.getElementById('trace').innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%"><rect x="${X(tr.seg[0])}" y="0" width="${X(tr.seg[1]) - X(tr.seg[0])}" height="${H}" fill="#e3f5f4"/>${marks}<path d="${d}" fill="none" stroke="#18202e" stroke-width="1"/></svg>`;
+}
+
+/* ---------- CSV ---------- */
+function downloadCSV() {
+  if (!last) return;
+  const blob = new Blob([GaitCore.toCSV(last.raw)], { type: 'text/csv' });
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  a.href = URL.createObjectURL(blob); a.download = `pelviswalk_${ts}.csv`; a.click();
+}
+$('#b-csv').onclick = () => $('#f-csv').click();
+$('#f-csv').onchange = async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try { const raw = GaitCore.fromCSV(await file.text()); raw.meta = { file: file.name }; finish(raw, subject()); }
+  catch (err) { $('#home-err').textContent = 'CSV를 읽지 못했습니다: ' + err.message; $('#home-err').style.display = 'block'; }
+};
+
+/* ---------- 데모 ---------- */
+document.querySelectorAll('[data-demo]').forEach(b => b.onclick = () => {
+  const sub = subject();
+  if (!$('#f-birth').value) { sub.birth = 1954; sub.age = new Date().getFullYear() - 1954; sub.sex = 'F'; sub.height = 158; sub.weight = 56; sub.name = '김영희'; }
+  const raw = b.dataset.demo === 'asym' ? GaitCore.synth({ stepR: 0.48, stepL: 0.62, seed: 3 }) : GaitCore.synth({ stepR: 0.53, stepL: 0.57, seed: 7 });
+  finish(raw, sub);
+});
+</script>
+</body>
+</html>

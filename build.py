@@ -1,0 +1,5 @@
+# app.html + gait-core.js -> index.html (단일 파일 배포본)
+a = open('app.html', encoding='utf-8').read()
+c = open('gait-core.js', encoding='utf-8').read()
+open('index.html', 'w', encoding='utf-8').write(a.replace('/*__GAIT_CORE__*/', c))
+print('built index.html')
