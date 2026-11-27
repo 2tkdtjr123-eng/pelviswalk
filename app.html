@@ -94,6 +94,17 @@ details.adv summary{cursor:pointer;color:var(--sub);font-size:13px;padding:4px 0
 .tile .badge.normal{color:var(--ok)} .tile .badge.caution{color:var(--warn)} .tile .badge.severe{color:var(--bad)}
 .interp{background:var(--bg);border-radius:12px;padding:12px;font-size:14px;margin-top:12px;color:#2b3445}
 .interp strong.normal{color:var(--ok)} .interp strong.caution{color:var(--warn)} .interp strong.severe{color:var(--bad)}
+.xwalk{margin-top:12px;border-radius:12px;padding:12px 14px;border:1.5px solid var(--line);background:#fff}
+.xwalk.normal{border-color:#bfe5cc}.xwalk.caution{border-color:#f8dcb6}.xwalk.severe{border-color:#f3c4c4}
+.xw-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
+.xw-top .badge{margin-left:auto}
+.xw-ico{display:inline-flex;gap:2px}.xw-ico i{width:4px;height:14px;background:var(--navy);border-radius:1px}
+.xw-bar{position:relative;height:10px;border-radius:6px;background:var(--line);margin:22px 0 8px}
+.xw-fill{height:100%;border-radius:6px;background:var(--teal)}
+.xwalk.caution .xw-fill{background:var(--warn)}.xwalk.severe .xw-fill{background:var(--bad)}
+.xw-m{position:absolute;top:-6px;width:2px;height:22px;background:var(--navy)}
+.xw-m em{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--sub);white-space:nowrap}
+.xwalk p{font-size:13px;color:#2b3445}
 .lr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .lr div{border-radius:12px;padding:10px 12px;border:1.5px solid}
 .lr .l{border-color:#cfdcf6;background:#f3f7fe} .lr .r{border-color:#f6d9c9;background:#fef7f3}
@@ -497,6 +508,20 @@ function hbar(label, v, max = 30, th = 10) {
     <div class="val" style="font-size:15px">${f1(v)}%</div></div>`;
 }
 const badge = g => `<span class="badge ${g.level}">${g.label}</span>`;
+// 횡단보도 기준: 일반 1.0 m/s, 노인·어린이 보호구역 0.7 m/s (보행신호시간 산정 기준)
+function xwalk(speed, dist) {
+  const t10 = 10 / speed;
+  const [lvl, title, msg] = speed >= 1.0
+    ? ['normal', '일반 횡단보도 기준 통과', '1초에 1m 이상 — 일반 횡단보도 신호 안에 건널 수 있는 속도입니다.']
+    : speed >= 0.7
+      ? ['caution', '보호구역 기준만 통과', '일반 횡단보도(1.0 m/s)보다 느립니다. 보호구역(0.7 m/s) 신호에서는 건널 수 있는 속도입니다.']
+      : ['severe', '보호구역 기준 미달', '보호구역 신호 기준(0.7 m/s)보다 느립니다. 신호 안에 건너기 어려울 수 있습니다.'];
+  const pct = Math.min(100, speed / 1.5 * 100), m07 = 0.7 / 1.5 * 100, m10 = 1.0 / 1.5 * 100;
+  return `<div class="xwalk ${lvl}">
+    <div class="xw-top"><span class="xw-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b>횡단보도 기준</b><span class="badge ${lvl}">${title}</span></div>
+    <div class="xw-bar"><div class="xw-fill" style="width:${pct}%"></div><span class="xw-m" style="left:${m07}%"><em>0.7 보호구역</em></span><span class="xw-m" style="left:${m10}%"><em>1.0 일반</em></span></div>
+    <p>10m를 <b>${f1(t10)}초</b>에 걷는 속도 (기준 10초) · ${msg}</p></div>`;
+}
 const mask = n => n.length <= 1 ? n : n.length === 2 ? n[0] + '*' : n[0] + '*'.repeat(n.length - 2) + n[n.length - 1];
 
 /* ---------- 결과지 렌더 ---------- */
@@ -533,7 +558,8 @@ function renderResult(r, ref, sc, sub, ai, calcMs, raw) {
       <div class="tile"><span>분속수</span><b>${f1(r.general.cadence, 0)}</b><em>걸음/분</em><br>${badge(gCad)}</div>
       <div class="tile"><span>보행 속도</span><b>${f1(r.general.speed, 2)}</b><em>m/s</em><br>${badge(gSpeed)}</div>
     </div>
-    <div class="interp">${interpTxt}</div></div>
+    <div class="interp">${interpTxt}</div>
+    ${xwalk(r.general.speed, sub.distance)}</div>
 
   <div class="card"><div class="ct"><h3>좌우 GCT 밸런스</h3>${badge(gBal)}</div>
     ${gauge(r.gct.balance)}
